@@ -4,20 +4,18 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"flag"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
+<<<<<<< HEAD
 	"regexp"
+=======
+>>>>>>> gaantunes/merge-lag-estimation
 	"strconv"
 	"strings"
-	"sync"
-	"time"
 
 	"github.com/Shopify/sarama"
-	"github.com/krallistic/kazoo-go"
-	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	plog "github.com/prometheus/common/promlog"
@@ -33,6 +31,7 @@ const (
 	clientID  = "kafka_exporter"
 )
 
+<<<<<<< HEAD
 const (
 	INFO  = 0
 	DEBUG = 1
@@ -663,6 +662,8 @@ func (e *Exporter) collect(ch chan<- prometheus.Metric) {
 	}
 }
 
+=======
+>>>>>>> gaantunes/merge-lag-estimation
 func init() {
 	metrics.UseNilMetrics = true
 	prometheus.MustRegister(version.NewCollector("kafka_exporter"))
@@ -792,6 +793,7 @@ func setup(
 	klog.V(INFO).Infoln("Starting kafka_exporter", version.Info())
 	klog.V(DEBUG).Infoln("Build context", version.BuildContext())
 
+<<<<<<< HEAD
 	clusterBrokers = prometheus.NewDesc(
 		prometheus.BuildFQName(namespace, "", "brokers"),
 		"Number of Brokers in the Kafka Cluster.",
@@ -884,6 +886,8 @@ func setup(
 		[]string{"consumergroup"}, labels,
 	)
 
+=======
+>>>>>>> gaantunes/merge-lag-estimation
 	if logSarama {
 		sarama.Logger = log.New(os.Stdout, "[sarama] ", log.LstdFlags)
 	}

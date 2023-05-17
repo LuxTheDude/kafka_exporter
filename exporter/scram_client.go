@@ -1,4 +1,4 @@
-package main
+package exporter
 
 import (
 	"crypto/sha256"
