@@ -1,4 +1,4 @@
-module github.com/danielqsj/kafka_exporter
+module github.com/wildum/kafka_exporter
 
 go 1.20
 
@@ -42,6 +42,7 @@ require (
 require k8s.io/klog/v2 v2.100.1
 
 require (
+	github.com/go-kit/kit v0.13.0 // indirect
 	github.com/go-kit/log v0.2.1 // indirect
 	github.com/go-logfmt/logfmt v0.5.1 // indirect
 	github.com/go-logr/logr v1.2.0 // indirect
