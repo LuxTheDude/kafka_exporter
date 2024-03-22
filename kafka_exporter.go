@@ -108,6 +108,8 @@ func main() {
 	toFlagBoolVar("concurrent.enable", "If true, all scrapes will trigger kafka operations otherwise, they will share results. WARN: This should be disabled on large clusters. Default is false", false, "false", &opts.AllowConcurrent)
 	toFlagIntVar("topic.workers", "Number of topic workers", 100, "100", &opts.TopicWorkers)
 	toFlagBoolVar("kafka.allow-auto-topic-creation", "If true, the broker may auto-create topics that we requested which do not already exist, default is false.", false, "false", &opts.AllowAutoTopicCreation)
+	toFlagIntVar("max.offsets", "Maximum number of offsets to store in the interpolation table for a partition", 1000, "1000", &opts.MaxOffsets)
+	toFlagIntVar("prune.interval", "How frequently should the interpolation table be pruned, in seconds", 30, "30", &opts.PruneIntervalSeconds)
 
 	plConfig := plog.Config{}
 	plogflag.AddFlags(kingpin.CommandLine, &plConfig)
