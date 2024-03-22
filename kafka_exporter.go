@@ -108,7 +108,6 @@ func main() {
 	toFlagBoolVar("concurrent.enable", "If true, all scrapes will trigger kafka operations otherwise, they will share results. WARN: This should be disabled on large clusters. Default is false", false, "false", &opts.AllowConcurrent)
 	toFlagIntVar("topic.workers", "Number of topic workers", 100, "100", &opts.TopicWorkers)
 	toFlagBoolVar("kafka.allow-auto-topic-creation", "If true, the broker may auto-create topics that we requested which do not already exist, default is false.", false, "false", &opts.AllowAutoTopicCreation)
-	toFlagIntVar("verbosity", "Verbosity log level", 0, "0", &opts.VerbosityLogLevel)
 
 	plConfig := plog.Config{}
 	plogflag.AddFlags(kingpin.CommandLine, &plConfig)

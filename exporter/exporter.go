@@ -108,7 +108,6 @@ type Options struct {
 	TopicWorkers             int
 	AllowConcurrent          bool
 	AllowAutoTopicCreation   bool
-	VerbosityLogLevel        int
 	MaxOffsets               int
 	PruneIntervalSeconds     int
 }

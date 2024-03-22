@@ -1,11 +1,10 @@
-FROM        quay.io/prometheus/busybox:latest
-MAINTAINER  Daniel Qian <qsj.daniel@gmail.com>
+FROM        golang:alpine AS build
 
-ARG TARGETARCH
-ARG BIN_DIR=.build/linux-${TARGETARCH}/
+ADD . /src
+WORKDIR /src
+RUN go build -o /server
 
-COPY ${BIN_DIR}/kafka_exporter /bin/kafka_exporter
-
+FROM golang:alpine
 EXPOSE     9308
-USER nobody
-ENTRYPOINT [ "/bin/kafka_exporter" ]
+COPY --from=build /server /
+ENTRYPOINT [ "/server" ]
