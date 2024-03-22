@@ -140,10 +140,6 @@ func setup(
 	level.Info(logger).Log("Starting kafka_exporter", version.BuildContext())
 	level.Debug(logger).Log("Build context", version.BuildContext())
 
-	if logSarama {
-		sarama.Logger = log.New(os.Stdout, "[sarama] ", log.LstdFlags)
-	}
-
 	exp, err := exporter.New(logger, opts, topicFilter, topicExclude, groupFilter, groupExclude)
 	if err != nil {
 		level.Error(logger).Log(err.Error())

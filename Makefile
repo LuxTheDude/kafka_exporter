@@ -1,12 +1,11 @@
 GO    := GO111MODULE=on go
-PROMU := $(GOPATH)/bin/promu
-pkgs   = $(shell $(GO) list ./... | grep -v /vendor/)
+PROMU := $(shell go env GOPATH)/bin/promu
+pkgs   = $(shell $(GO) list ./...)
 
 PREFIX                  ?= $(shell pwd)
 BIN_DIR                 ?= $(shell pwd)
 DOCKER_IMAGE_NAME       ?= kafka-exporter
 DOCKER_IMAGE_TAG        ?= $(subst /,-,$(shell git rev-parse --abbrev-ref HEAD))
-#TAG 					:= $(shell echo `if [ "$(TRAVIS_BRANCH)" = "master" ] || [ "$(TRAVIS_BRANCH)" = "" ] ; then echo "latest"; else echo $(TRAVIS_BRANCH) ; fi`)
 
 PUSHTAG                 ?= type=registry,push=true
 DOCKER_PLATFORMS        ?= linux/amd64,linux/s390x,linux/arm64,linux/ppc64le
@@ -15,7 +14,7 @@ all: format build test
 
 style:
 	@echo ">> checking code style"
-	@! gofmt -d $(shell find . -path ./vendor -prune -o -name '*.go' -print) | grep '^'
+	@gofmt -d $(shell find . -name '*.go') | grep '^'; test $$? -eq 1
 
 test:
 	@echo ">> running tests"
@@ -31,9 +30,7 @@ vet:
 
 build: promu
 	@echo ">> building binaries"
-	@$(GO) mod vendor
 	@$(PROMU) build --prefix $(PREFIX)
-
 
 crossbuild: promu
 	@echo ">> crossbuilding binaries"
@@ -62,55 +59,24 @@ release: promu github-release
 	@$(PROMU) release .tarballs
 
 promu:
-	@GOOS=$(shell uname -s | tr A-Z a-z) \
-		GOARCH=$(subst x86_64,amd64,$(patsubst i%86,386,$(shell uname -m))) \
-		$(GO) install github.com/prometheus/promu@v0.14.0
-PROMU=$(shell go env GOPATH)/bin/promu
+	@$(GO) install github.com/prometheus/promu@v0.14.0
 
 github-release:
-	@GOOS=$(shell uname -s | tr A-Z a-z) \
-		GOARCH=$(subst x86_64,amd64,$(patsubst i%86,386,$(shell uname -m))) \
-		$(GO) install github.com/github-release/github-release@v0.10.0
-	$(GO) mod tidy
+	@$(GO) install github.com/github-release/github-release@v0.10.0
+	@$(GO) mod tidy
 
-# Run go fmt against code
-.PHONY: fmt
+# Simplify fmt, tidy, lint commands by removing vendor checks
+.PHONY: fmt tidy lint
 fmt:
-	@find . -type f -name '*.go'| grep -v "/vendor/" | xargs gofmt -w -s
+	@gofmt -w -s $(shell find . -type f -name '*.go')
 
-# Run mod tidy against code
-.PHONY: tidy
 tidy:
 	@go mod tidy
 
-# Run golang lint against code
-.PHONY: lint
 lint: golangci-lint
-	@$(GOLANG_LINT) run \
-      --timeout 30m \
-      --disable-all \
-      -E deadcode \
-      -E unused \
-      -E varcheck \
-      -E ineffassign \
-      -E goimports \
-      -E gofmt \
-      -E misspell \
-      -E unparam \
-      -E unconvert \
-      -E govet \
-      -E errcheck
+	@$(GOLANG_LINT) run
 
-# find or download golangci-lint
-# download golangci-lint if necessary
 golangci-lint:
-ifeq (, $(shell which golangci-lint))
-	@GOOS=$(shell uname -s | tr A-Z a-z) \
-    		GOARCH=$(subst x86_64,amd64,$(patsubst i%86,386,$(shell uname -m))) \
-    		$(GO) install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.52.2
-GOLANG_LINT=$(shell go env GOPATH)/bin/golangci-lint
-else
-GOLANG_LINT=$(shell which golangci-lint)
-endif
+	@$(GO) install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.52.2
 
 .PHONY: all style format build test vet tarball docker promu
