@@ -641,6 +641,7 @@ func (e *Exporter) collect(ch chan<- prometheus.Metric) {
 					)
 					e.mu.Lock()
 					if offset, ok := offset[topic][partition]; ok {
+						e.consumerGroupLagTable.createOrUpdate(group.GroupId, topic, partition, offset)
 						// If the topic is consumed by that consumer group, but no offset associated with the partition
 						// forcing lag to -1 to be able to alert on that
 						var lag int64
