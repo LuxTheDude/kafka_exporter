@@ -827,7 +827,9 @@ func (e *Exporter) RunPruner(quit chan struct{}) {
 }
 
 func (e *Exporter) Close() {
-	e.client.Close()
+	if e.client != nil {
+		e.client.Close()
+	}
 }
 
 func (e *Exporter) initializeMetrics() {

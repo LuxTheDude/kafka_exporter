@@ -146,7 +146,8 @@ func setup(
 
 	exp, err := exporter.New(logger, opts, topicFilter, topicExclude, groupFilter, groupExclude)
 	if err != nil {
-		level.Error(logger).Log(err)
+		level.Error(logger).Log(err.Error())
+		return
 	}
 	defer exp.Close()
 	prometheus.MustRegister(exp)
