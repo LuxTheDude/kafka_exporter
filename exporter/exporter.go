@@ -14,8 +14,8 @@ import (
 	"time"
 
 	"github.com/Shopify/sarama"
-	"github.com/go-kit/kit/log"
-	"github.com/go-kit/kit/log/level"
+	"github.com/go-kit/log"
+	"github.com/go-kit/log/level"
 	"github.com/krallistic/kazoo-go"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
@@ -70,12 +70,12 @@ type Exporter struct {
 	sgChans                 []chan<- prometheus.Metric
 	consumerGroupFetchAll   bool
 	consumerGroupLagTable   interpolationMap
-	kafkaOpts               KafkaOpts
+	kafkaOpts               Options
 	saramaConfig            *sarama.Config
 	logger                  log.Logger
 }
 
-type KafkaOpts struct {
+type Options struct {
 	Uri                      []string
 	UseSASL                  bool
 	UseSASLHandshake         bool
@@ -109,6 +109,8 @@ type KafkaOpts struct {
 	AllowConcurrent          bool
 	AllowAutoTopicCreation   bool
 	VerbosityLogLevel        int
+	MaxOffsets               int
+	PruneIntervalSeconds     int
 }
 
 // CanReadCertAndKey returns true if the certificate and key files already exists,
@@ -146,7 +148,7 @@ func canReadFile(path string) bool {
 }
 
 // New returns an initialized Exporter.
-func New(logger log.Logger, opts KafkaOpts, topicFilter, topicExclude string, groupFilter string, groupExclude string) (*Exporter, error) {
+func New(logger log.Logger, opts Options, topicFilter, topicExclude string, groupFilter string, groupExclude string) (*Exporter, error) {
 	var zookeeperClient *kazoo.Kazoo
 	config := sarama.NewConfig()
 	config.ClientID = clientID
@@ -805,25 +807,25 @@ func getNextLowerOffset(offsets []int64, k int64) int64 {
 // Run iMap.Prune() on an interval (default 30 seconds). A new client is created
 // to avoid an issue where the client may be closed before Prune attempts to
 // use it.
-// func (e *Exporter) RunPruner(quit chan struct{}) {
-// 	ticker := time.NewTicker(time.Duration(e.kafkaOpts.PruneIntervalSeconds) * time.Second)
+func (e *Exporter) RunPruner(quit chan struct{}) {
+	ticker := time.NewTicker(time.Duration(e.kafkaOpts.PruneIntervalSeconds) * time.Second)
 
-// 	for {
-// 		select {
-// 		case <-ticker.C:
-// 			client, err := sarama.NewClient(e.kafkaOpts.Uri, e.saramaConfig)
-// 			if err != nil {
-// 				level.Error(e.logger).Log("msg", "Error initializing kafka client for RunPruner", "err", err.Error())
-// 				return
-// 			}
-// 			e.consumerGroupLagTable.Prune(e.logger, client, e.kafkaOpts.MaxOffsets)
-// 			client.Close()
-// 		case <-quit:
-// 			ticker.Stop()
-// 			return
-// 		}
-// 	}
-// }
+	for {
+		select {
+		case <-ticker.C:
+			client, err := sarama.NewClient(e.kafkaOpts.Uri, e.saramaConfig)
+			if err != nil {
+				level.Error(e.logger).Log("msg", "Error initializing kafka client for RunPruner", "err", err.Error())
+				return
+			}
+			e.consumerGroupLagTable.Prune(e.logger, client, e.kafkaOpts.MaxOffsets)
+			client.Close()
+		case <-quit:
+			ticker.Stop()
+			return
+		}
+	}
+}
 
 func (e *Exporter) Close() {
 	e.client.Close()
