@@ -27,11 +27,6 @@ func init() {
 	prometheus.MustRegister(version.NewCollector("kafka_exporter"))
 }
 
-//func toFlag(name string, help string) *kingpin.FlagClause {
-//	flag.CommandLine.String(name, "", help) // hack around flag.Parse and klog.init flags
-//	return kingpin.Flag(name, help)
-//}
-
 // hack around flag.Parse and klog.init flags
 func toFlagString(name string, help string, value string) *string {
 	flag.CommandLine.String(name, value, help) // hack around flag.Parse and klog.init flags
@@ -109,7 +104,6 @@ func main() {
 	toFlagIntVar("topic.workers", "Number of topic workers", 100, "100", &opts.TopicWorkers)
 	toFlagBoolVar("kafka.allow-auto-topic-creation", "If true, the broker may auto-create topics that we requested which do not already exist, default is false.", false, "false", &opts.AllowAutoTopicCreation)
 	toFlagIntVar("max.offsets", "Maximum number of offsets to store in the interpolation table for a partition", 1000, "1000", &opts.MaxOffsets)
-	toFlagIntVar("prune.interval", "How frequently should the interpolation table be pruned, in seconds", 30, "30", &opts.PruneIntervalSeconds)
 
 	plConfig := plog.Config{}
 	plogflag.AddFlags(kingpin.CommandLine, &plConfig)
@@ -168,10 +162,6 @@ func setup(
 			level.Error(logger).Log("Error handle /healthz request", err)
 		}
 	})
-
-	quitChannel := make(chan struct{})
-	go exp.RunPruner(quitChannel)
-	defer close(quitChannel)
 
 	if opts.ServerUseTLS {
 		level.Info(logger).Log("Listening on HTTPS", listenAddress)

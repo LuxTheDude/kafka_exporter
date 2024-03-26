@@ -1,12 +1,13 @@
 package exporter
 
 import (
-	"github.com/Shopify/sarama"
-	"github.com/go-kit/kit/log"
-	"github.com/go-kit/kit/log/level"
 	"sort"
 	"sync"
 	"time"
+
+	"github.com/Shopify/sarama"
+	"github.com/go-kit/kit/log"
+	"github.com/go-kit/kit/log/level"
 )
 
 type interpolationMap struct {
@@ -28,21 +29,28 @@ func (i *interpolationMap) Prune(logger log.Logger, client sarama.Client, maxOff
 	admin, err := sarama.NewClusterAdminFromClient(client)
 	if err != nil {
 		level.Error(logger).Log("msg", "Error creating cluster admin", "err", err.Error())
+		return
 	}
 	if admin == nil {
 		level.Error(logger).Log("msg", "Failed to create cluster admin")
 		return
 	}
 
-	defer admin.Close()
-
 	groupsMap, err := admin.ListConsumerGroups()
+	if err != nil {
+		level.Error(logger).Log("msg", "Error getting consumer groups", "err", err.Error())
+		return
+	}
 	groupKeys := make([]string, len(groupsMap))
 	for group, _ := range groupsMap {
 		groupKeys = append(groupKeys, group)
 	}
 
 	topicsMap, err := admin.ListTopics()
+	if err != nil {
+		level.Error(logger).Log("msg", "Error getting topics", "err", err.Error())
+		return
+	}
 	topicKeys := make([]string, len(topicsMap))
 	for topic, _ := range topicsMap {
 		topicKeys = append(topicKeys, topic)

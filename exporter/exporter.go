@@ -67,7 +67,6 @@ type Exporter struct {
 	sgMutex                 sync.Mutex
 	sgWaitCh                chan struct{}
 	sgChans                 []chan<- prometheus.Metric
-	consumerGroupFetchAll   bool
 	consumerGroupLagTable   interpolationMap
 	kafkaOpts               Options
 	saramaConfig            *sarama.Config
@@ -108,7 +107,6 @@ type Options struct {
 	AllowConcurrent          bool
 	AllowAutoTopicCreation   bool
 	MaxOffsets               int
-	PruneIntervalSeconds     int
 }
 
 // CanReadCertAndKey returns true if the certificate and key files already exists,
@@ -273,7 +271,6 @@ func New(logger log.Logger, opts Options, topicFilter, topicExclude string, grou
 		sgMutex:                 sync.Mutex{},
 		sgWaitCh:                nil,
 		sgChans:                 []chan<- prometheus.Metric{},
-		consumerGroupFetchAll:   config.Version.IsAtLeast(sarama.V2_0_0_0),
 		consumerGroupLagTable:   interpolationMap{mu: sync.Mutex{}},
 		kafkaOpts:               opts,
 		saramaConfig:            config,
@@ -285,17 +282,17 @@ func New(logger log.Logger, opts Options, topicFilter, topicExclude string, grou
 	return newExporter, nil
 }
 
-// func (e *Exporter) fetchOffsetVersion() int16 {
-// 	version := e.client.Config().Version
-// 	if e.client.Config().Version.IsAtLeast(sarama.V2_0_0_0) {
-// 		return 4
-// 	} else if version.IsAtLeast(sarama.V0_10_2_0) {
-// 		return 2
-// 	} else if version.IsAtLeast(sarama.V0_8_2_2) {
-// 		return 1
-// 	}
-// 	return 0
-// }
+func (e *Exporter) fetchOffsetVersion() int16 {
+	version := e.client.Config().Version
+	if e.client.Config().Version.IsAtLeast(sarama.V2_0_0_0) {
+		return 4
+	} else if version.IsAtLeast(sarama.V0_10_2_0) {
+		return 2
+	} else if version.IsAtLeast(sarama.V0_8_2_2) {
+		return 1
+	}
+	return 0
+}
 
 // Describe describes all the metrics ever exported by the Kafka exporter. It
 // implements prometheus.Collector.
@@ -321,6 +318,8 @@ func (e *Exporter) Describe(ch chan<- *prometheus.Desc) {
 	ch <- lagDatapointUsedExtrapolation
 }
 
+// Collect fetches the stats from configured Kafka location and delivers them
+// as Prometheus metrics. It implements prometheus.Collector.
 func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 	if e.allowConcurrent {
 		e.collect(ch)
@@ -344,8 +343,6 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 	// collectChan finished
 }
 
-// Collect fetches the stats from configured Kafka location and delivers them
-// as Prometheus metrics. It implements prometheus.Collector.
 func (e *Exporter) collectChans(quit chan struct{}) {
 	original := make(chan prometheus.Metric)
 	container := make([]prometheus.Metric, 0, 100)
@@ -391,7 +388,7 @@ func (e *Exporter) collect(ch chan<- prometheus.Metric) {
 		if err := e.client.RefreshMetadata(); err != nil {
 			level.Error(e.logger).Log("msg", "Error refreshing topics. Using cached topic data", "err", err.Error())
 		}
-
+		e.consumerGroupLagTable.Prune(e.logger, e.client, e.kafkaOpts.MaxOffsets)
 		e.nextMetadataRefresh = now.Add(e.metadataRefreshInterval)
 	}
 
@@ -575,9 +572,8 @@ func (e *Exporter) collect(ch chan<- prometheus.Metric) {
 			return
 		}
 		for _, group := range describeGroups.Groups {
-			// TODO: why is version always 1? before it was fetchOffsetVersion
-			offsetFetchRequest := sarama.OffsetFetchRequest{ConsumerGroup: group.GroupId, Version: 1}
-			//TODO:Is it ok to remove consumerGroupFetchAll in favour of offsetShowAll?
+			// upstream is using version 1, we use fetchOffsetVersion
+			offsetFetchRequest := sarama.OffsetFetchRequest{ConsumerGroup: group.GroupId, Version: e.fetchOffsetVersion()}
 			if e.offsetShowAll {
 				for topic, partitions := range offset {
 					for partition := range partitions {
@@ -608,8 +604,7 @@ func (e *Exporter) collect(ch chan<- prometheus.Metric) {
 			}
 
 			for topic, partitions := range offsetFetchResponse.Blocks {
-				// TODO: should we keep this?
-				if !e.topicFilter.MatchString(topic) {
+				if !e.topicFilter.MatchString(topic) || e.topicExclude.MatchString(topic) {
 					continue
 				}
 				// If the topic is not consumed by that consumer group, skip it
@@ -719,13 +714,13 @@ func (e *Exporter) metricsForLag(ch chan<- prometheus.Metric) {
 				level.Error(e.logger).Log("msg", "Error listing offsets for", "group", group, "err", err.Error())
 			}
 			if response == nil {
-				level.Error(e.logger).Log("msg", "Got nil response from ListConsumerGroupOffsets for group", "group", group)
+				level.Error(e.logger).Log("msg", "Got nil response from ListConsumerGroupOffsets", "group", group)
 				continue
 			}
 
 			for partition, offsets := range partitionMap {
 				if len(offsets) < 2 {
-					level.Debug(e.logger).Log("msg", "Insufficient data for lag calculation for group: continuing", "group", group)
+					level.Debug(e.logger).Log("msg", "Insufficient data for lag calculation: continuing", "group", group, "partition", partition)
 					continue
 				}
 				if latestConsumedOffset, ok := response.Blocks[topic][partition]; ok {
@@ -800,30 +795,6 @@ func getNextLowerOffset(offsets []int64, k int64) int64 {
 		index++
 	}
 	return min
-}
-
-// TODO: This is not used anymore, is this ok?
-// Run iMap.Prune() on an interval (default 30 seconds). A new client is created
-// to avoid an issue where the client may be closed before Prune attempts to
-// use it.
-func (e *Exporter) RunPruner(quit chan struct{}) {
-	ticker := time.NewTicker(time.Duration(e.kafkaOpts.PruneIntervalSeconds) * time.Second)
-
-	for {
-		select {
-		case <-ticker.C:
-			client, err := sarama.NewClient(e.kafkaOpts.Uri, e.saramaConfig)
-			if err != nil {
-				level.Error(e.logger).Log("msg", "Error initializing kafka client for RunPruner", "err", err.Error())
-				return
-			}
-			e.consumerGroupLagTable.Prune(e.logger, client, e.kafkaOpts.MaxOffsets)
-			client.Close()
-		case <-quit:
-			ticker.Stop()
-			return
-		}
-	}
 }
 
 func (e *Exporter) Close() {
