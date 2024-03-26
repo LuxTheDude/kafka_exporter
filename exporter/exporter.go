@@ -674,7 +674,7 @@ func (e *Exporter) collect(ch chan<- prometheus.Metric) {
 		level.Error(e.logger).Log("msg", "No valid broker, cannot get consumer group metrics")
 	}
 
-	level.Info(e.logger).Log("msg", "Calculating consumergroup lag")
+	level.Debug(e.logger).Log("msg", "Calculating consumergroup lag")
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
