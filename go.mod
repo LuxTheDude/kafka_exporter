@@ -1,4 +1,4 @@
-module github.com/grafana/kafka_exporter
+module github.com/wildum/kafka_exporter
 
 go 1.20
 

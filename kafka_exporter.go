@@ -13,13 +13,13 @@ import (
 	kingpin "github.com/alecthomas/kingpin/v2"
 	klog "github.com/go-kit/log"
 	"github.com/go-kit/log/level"
-	"github.com/grafana/kafka_exporter/exporter"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	plog "github.com/prometheus/common/promlog"
 	plogflag "github.com/prometheus/common/promlog/flag"
 	"github.com/prometheus/common/version"
 	"github.com/rcrowley/go-metrics"
+	"github.com/wildum/kafka_exporter/exporter"
 )
 
 func init() {

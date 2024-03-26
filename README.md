@@ -44,7 +44,7 @@ Dependency
 Download
 --------
 
-Binary can be downloaded from [Releases](https://github.com/grafana/kafka_exporter/releases) page.
+Binary can be downloaded from [Releases](https://github.com/wildum/kafka_exporter/releases) page.
 
 Compile
 -------
@@ -303,7 +303,7 @@ Contribute
 
 To contribute to the upstream project, please open a [pull request](https://github.com/danielqsj/kafka_exporter/pulls).
 
-To contribute to this fork please open a [pull request here](https://github.com/grafana/kafka_exporter/pulls)
+To contribute to this fork please open a [pull request here](https://github.com/wildum/kafka_exporter/pulls)
 
 Donation
 --------
