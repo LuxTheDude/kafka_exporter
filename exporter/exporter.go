@@ -27,25 +27,25 @@ const (
 )
 
 var (
-	clusterBrokers                     *prometheus.Desc
-	clusterBrokerInfo                  *prometheus.Desc
-	topicPartitions                    *prometheus.Desc
-	topicCurrentOffset                 *prometheus.Desc
-	topicOldestOffset                  *prometheus.Desc
-	topicPartitionLeader               *prometheus.Desc
-	topicPartitionReplicas             *prometheus.Desc
-	topicPartitionInSyncReplicas       *prometheus.Desc
-	topicPartitionUsesPreferredReplica *prometheus.Desc
-	topicUnderReplicatedPartition      *prometheus.Desc
-	consumergroupCurrentOffset         *prometheus.Desc
-	consumergroupCurrentOffsetSum      *prometheus.Desc
-	consumergroupLag                   *prometheus.Desc
-	consumergroupLagSum                *prometheus.Desc
-	consumergroupLagZookeeper          *prometheus.Desc
-	consumergroupMembers               *prometheus.Desc
-	topicPartitionLagMillis            *prometheus.Desc
-	lagDatapointUsedInterpolation      *prometheus.Desc
-	lagDatapointUsedExtrapolation      *prometheus.Desc
+	clusterBrokers                           *prometheus.Desc
+	clusterBrokerInfo                        *prometheus.Desc
+	topicPartitions                          *prometheus.Desc
+	topicCurrentOffset                       *prometheus.Desc
+	topicOldestOffset                        *prometheus.Desc
+	topicPartitionLeader                     *prometheus.Desc
+	topicPartitionReplicas                   *prometheus.Desc
+	topicPartitionInSyncReplicas             *prometheus.Desc
+	topicPartitionUsesPreferredReplica       *prometheus.Desc
+	topicUnderReplicatedPartition            *prometheus.Desc
+	consumergroupCurrentOffset               *prometheus.Desc
+	consumergroupCurrentOffsetSum            *prometheus.Desc
+	consumergroupUncomittedOffsets           *prometheus.Desc
+	consumergroupUncommittedOffsetsZookeeper *prometheus.Desc
+	consumergroupUncommittedOffsetsSum       *prometheus.Desc
+	consumergroupMembers                     *prometheus.Desc
+	topicPartitionLagMillis                  *prometheus.Desc
+	lagDatapointUsedInterpolation            *prometheus.Desc
+	lagDatapointUsedExtrapolation            *prometheus.Desc
 )
 
 // Exporter collects Kafka stats from the given server and exports them using
@@ -309,9 +309,9 @@ func (e *Exporter) Describe(ch chan<- *prometheus.Desc) {
 	ch <- topicUnderReplicatedPartition
 	ch <- consumergroupCurrentOffset
 	ch <- consumergroupCurrentOffsetSum
-	ch <- consumergroupLag
-	ch <- consumergroupLagSum
-	ch <- consumergroupLagZookeeper
+	ch <- consumergroupUncomittedOffsets
+	ch <- consumergroupUncommittedOffsetsZookeeper
+	ch <- consumergroupUncommittedOffsetsSum
 	ch <- consumergroupMembers
 	ch <- topicPartitionLagMillis
 	ch <- lagDatapointUsedInterpolation
@@ -500,7 +500,7 @@ func (e *Exporter) collect(ch chan<- prometheus.Metric) {
 
 						consumerGroupLag := currentOffset - offset
 						ch <- prometheus.MustNewConstMetric(
-							consumergroupLagZookeeper, prometheus.GaugeValue, float64(consumerGroupLag), group.Name, topic, strconv.FormatInt(int64(partition), 10),
+							consumergroupUncommittedOffsetsZookeeper, prometheus.GaugeValue, float64(consumerGroupLag), group.Name, topic, strconv.FormatInt(int64(partition), 10),
 						)
 					}
 				}
@@ -646,7 +646,7 @@ func (e *Exporter) collect(ch chan<- prometheus.Metric) {
 							lagSum += lag
 						}
 						ch <- prometheus.MustNewConstMetric(
-							consumergroupLag, prometheus.GaugeValue, float64(lag), group.GroupId, topic, strconv.FormatInt(int64(partition), 10),
+							consumergroupUncomittedOffsets, prometheus.GaugeValue, float64(lag), group.GroupId, topic, strconv.FormatInt(int64(partition), 10),
 						)
 					} else {
 						level.Error(e.logger).Log("msg", "no offset, cannot get consumer group lag", "topic", topic, "partition", partition)
@@ -657,7 +657,7 @@ func (e *Exporter) collect(ch chan<- prometheus.Metric) {
 					consumergroupCurrentOffsetSum, prometheus.GaugeValue, float64(currentOffsetSum), group.GroupId, topic,
 				)
 				ch <- prometheus.MustNewConstMetric(
-					consumergroupLagSum, prometheus.GaugeValue, float64(lagSum), group.GroupId, topic,
+					consumergroupUncommittedOffsetsSum, prometheus.GaugeValue, float64(lagSum), group.GroupId, topic,
 				)
 			}
 		}
@@ -884,21 +884,24 @@ func (e *Exporter) initializeMetrics() {
 		[]string{"consumergroup", "topic"}, labels,
 	)
 
-	consumergroupLag = prometheus.NewDesc(
-		prometheus.BuildFQName(namespace, "consumergroup", "lag"),
-		"Current Approximate Lag of a ConsumerGroup at Topic/Partition",
+	// This metric corresponds to the upstream metric "kafka_consumergroup_lag" (rename)
+	consumergroupUncomittedOffsets = prometheus.NewDesc(
+		prometheus.BuildFQName(namespace, "consumergroup", "uncommitted_offsets"),
+		"Current Approximate count of uncommitted offsets for a ConsumerGroup at Topic/Partition",
 		[]string{"consumergroup", "topic", "partition"}, labels,
 	)
 
-	consumergroupLagZookeeper = prometheus.NewDesc(
-		prometheus.BuildFQName(namespace, "consumergroupzookeeper", "lag_zookeeper"),
-		"Current Approximate Lag(zookeeper) of a ConsumerGroup at Topic/Partition",
+	// This metric corresponds to the upstream metric "kafka_consumergroupzookeeper_lag_zookeeper" (rename)
+	consumergroupUncommittedOffsetsZookeeper = prometheus.NewDesc(
+		prometheus.BuildFQName(namespace, "consumergroupzookeeper", "uncommitted_offsets_zookeeper"),
+		"Current Approximate count of uncommitted offsets(zookeeper) for a ConsumerGroup at Topic/Partition",
 		[]string{"consumergroup", "topic", "partition"}, nil,
 	)
 
-	consumergroupLagSum = prometheus.NewDesc(
-		prometheus.BuildFQName(namespace, "consumergroup", "lag_sum"),
-		"Current Approximate Lag of a ConsumerGroup at Topic for all partitions",
+	// This metric corresponds to the upstream metric "kafka_consumergroup_lag_sum" (rename)
+	consumergroupUncommittedOffsetsSum = prometheus.NewDesc(
+		prometheus.BuildFQName(namespace, "consumergroup", "uncommitted_offsets_sum"),
+		"Current Approximate count of uncommitted offsets for a ConsumerGroup at Topic for all partitions",
 		[]string{"consumergroup", "topic"}, labels,
 	)
 
