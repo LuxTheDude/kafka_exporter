@@ -1,53 +1,47 @@
 ![kafka_exporter](https://socialify.git.ci/danielqsj/kafka_exporter/image?description=1&font=Inter&forks=1&pattern=Signal&stargazers=1&theme=Light)
 
-kafka_exporter
-==============
+# kafka_exporter
 
 Kafka exporter for Prometheus. For other metrics from Kafka, have a look at the [JMX exporter](https://github.com/prometheus/jmx_exporter).
 
-Table of Contents
------------------
+## Table of Contents
 
--	[Compatibility](#compatibility)
--	[Dependency](#dependency)
--	[Download](#download)
--	[Compile](#compile)
-	-	[Build Binary](#build-binary)
-	-	[Build Docker Image](#build-docker-image)
--	[Run](#run)
-	-	[Run Binary](#run-binary)
-	-	[Run Docker Image](#run-docker-image)
- -	-	[Run Docker Compose](#run-docker-compose)
--	[Flags](#flags)
-    -	[Notes](#notes)
--	[Metrics](#metrics)
-	-	[Brokers](#brokers)
-	-	[Topics](#topics)
-	-	[Consumer Groups](#consumer-groups)
--	[Grafana Dashboard](#grafana-dashboard)
--   [Contribute](#contribute)
--   [Donation](#donation)
--   [License](#license)
+- [Compatibility](#compatibility)
+- [Dependency](#dependency)
+- [Download](#download)
+- [Compile](#compile)
+  - [Build Binary](#build-binary)
+  - [Build Docker Image](#build-docker-image)
+- [Run](#run)
+  - [Run Binary](#run-binary)
+  - [Run Docker Image](#run-docker-image)
+- - [Run Docker Compose](#run-docker-compose)
+- [Flags](#flags)
+  - [Notes](#notes)
+- [Metrics](#metrics)
+  - [Brokers](#brokers)
+  - [Topics](#topics)
+  - [Consumer Groups](#consumer-groups)
+- [Grafana Dashboard](#grafana-dashboard)
+- [Contribute](#contribute)
+- [Donation](#donation)
+- [License](#license)
 
-Compatibility
--------------
+## Compatibility
 
 Support [Apache Kafka](https://kafka.apache.org) version 0.10.1.0 (and later).
 
-Dependency
-----------
+## Dependency
 
--	[Prometheus](https://prometheus.io)
--	[Sarama](https://shopify.github.io/sarama)
--	[Golang](https://golang.org)
+- [Prometheus](https://prometheus.io)
+- [Sarama](https://shopify.github.io/sarama)
+- [Golang](https://golang.org)
 
-Download
---------
+## Download
 
 Binary can be downloaded from [Releases](https://github.com/grafana/kafka_exporter/releases) page.
 
-Compile
--------
+## Compile
 
 ### Build Binary
 
@@ -61,8 +55,7 @@ make
 make docker
 ```
 
-Docker Hub Image
-----------------
+## Docker Hub Image
 
 ```shell
 docker pull grafana/kafka-exporter:latest
@@ -70,8 +63,7 @@ docker pull grafana/kafka-exporter:latest
 
 It can be used directly instead of having to build the image yourself. ([Docker Hub grafana/kafka-exporter](https://hub.docker.com/r/grafana/kafka-exporter)\)
 
-Run
----
+## Run
 
 ### Run Binary
 
@@ -86,27 +78,30 @@ docker run -ti --rm -p 9308:9308 grafana/kafka-exporter --kafka.server=kafka:909
 ```
 
 ### Run Docker Compose
+
 make a `docker-compose.yml` flie
+
 ```
 services:
   kafka-exporter:
-    image: danielqsj/kafka-exporter 
+    image: danielqsj/kafka-exporter
     command: ["--kafka.server=kafka:9092", "[--kafka.server=another-server ...]"]
     ports:
-      - 9308:9308     
+      - 9308:9308
 ```
+
 then run it
+
 ```
 docker-compose up -d
 ```
 
-Flags
------
+## Flags
 
 This image is configurable using different flags
 
 | Flag name                      | Default        | Description                                                                                                                                    |
-|--------------------------------|----------------|------------------------------------------------------------------------------------------------------------------------------------------------|
+| ------------------------------ | -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
 | kafka.server                   | kafka:9092     | Addresses (host:port) of Kafka server                                                                                                          |
 | kafka.version                  | 2.0.0          | Kafka broker version                                                                                                                           |
 | sasl.enabled                   | false          | Connect using SASL/PLAIN                                                                                                                       |
@@ -130,9 +125,9 @@ This image is configurable using different flags
 | server.tls.ca-file             |                | The certificate authority file for the web server                                                                                              |
 | server.tls.cert-file           |                | The certificate file for the web server                                                                                                        |
 | server.tls.key-file            |                | The key file for the web server                                                                                                                |
-| topic.filter                   | .*             | Regex that determines which topics to collect                                                                                                  |
+| topic.filter                   | .\*            | Regex that determines which topics to collect                                                                                                  |
 | topic.exclude                  | ^$             | Regex that determines which topics to exclude                                                                                                  |
-| group.filter                   | .*             | Regex that determines which consumer groups to collect                                                                                         |
+| group.filter                   | .\*            | Regex that determines which consumer groups to collect                                                                                         |
 | group.exclude                  | ^$             | Regex that determines which consumer groups to exclude                                                                                         |
 | web.listen-address             | :9308          | Address to listen on for web interface and telemetry                                                                                           |
 | web.telemetry-path             | /metrics       | Path under which to expose metrics                                                                                                             |
@@ -155,8 +150,7 @@ For example:
 
 If you need to disable `sasl.handshake`, you could add flag `--no-sasl.handshake`
 
-Metrics
--------
+## Metrics
 
 Documents about exposed Prometheus metrics.
 
@@ -166,9 +160,10 @@ For details on the underlying metrics please see [Apache Kafka](https://kafka.ap
 
 **Metrics details**
 
-| Name            | Exposed information                    |
-|-----------------|----------------------------------------|
-| `kafka_brokers` | Number of Brokers in the Kafka Cluster |
+| Name                | Exposed information                    |
+| ------------------- | -------------------------------------- |
+| `kafka_brokers`     | Number of Brokers in the Kafka Cluster |
+| `kafka_broker_info` | Information about the Kafka Broker     |
 
 **Metrics output example**
 
@@ -183,7 +178,7 @@ kafka_brokers 3
 **Metrics details**
 
 | Name                                               | Exposed information                                 |
-|----------------------------------------------------|-----------------------------------------------------|
+| -------------------------------------------------- | --------------------------------------------------- |
 | `kafka_topic_partitions`                           | Number of partitions for this Topic                 |
 | `kafka_topic_partition_current_offset`             | Current Offset of a Broker at Topic/Partition       |
 | `kafka_topic_partition_oldest_offset`              | Oldest Offset of a Broker at Topic/Partition        |
@@ -233,18 +228,21 @@ kafka_topic_partition_under_replicated_partition{partition="0",topic="__consumer
 
 **Metrics details**
 
-| Name                                         | Exposed informations                                                     |
-|----------------------------------------------|--------------------------------------------------------------------------|
-| `kafka_consumergroup_current_offset`         | Current Offset of a ConsumerGroup at Topic/Partition                     |
-| `kafka_consumergroup_lag`                    | Current Approximate Lag of a ConsumerGroup at Topic/Partition            |
-| `kafka_consumergroupzookeeper_lag_zookeeper` | Current Approximate Lag(zookeeper) of a ConsumerGroup at Topic/Partition |
+| Name                                                         | Exposed informations                                                                                |
+| ------------------------------------------------------------ | --------------------------------------------------------------------------------------------------- |
+| `kafka_consumergroup_current_offset`                         | Current Offset of a ConsumerGroup at Topic/Partition                                                |
+| `kafka_consumergroup_current_offset_sum`                     | Current Offset of a ConsumerGroup at Topic for all partitions                                       |
+| `kafka_consumergroup_uncommitted_offsets`                    | Current Approximate count of uncommitted offsets for a ConsumerGroup at Topic/Partition             |
+| `kafka_consumergroup_uncommitted_offsets_sum`                | Current Approximate count of uncommitted offsets for a ConsumerGroup at Topic for all partitions    |
+| `kafka_consumergroup_members`                                | Amount of members in a consumer group"                                                              |
+| `kafka_consumergroupzookeeper_uncommitted_offsets_zookeeper` | Current Approximate count of uncommitted offsets(zookeeper) for a ConsumerGroup at Topic/Partition" |
 
 #### Important Note
 
-To be able to collect the metrics `kafka_consumergroupzookeeper_lag_zookeeper`, you must set the following flags:
+To be able to collect the metrics `kafka_consumergroupzookeeper_uncommitted_offsets_zookeeper`, you must set the following flags:
 
-* `use.consumelag.zookeeper`: enable collect consume lag from zookeeper
-* `zookeeper.server`: address for connection to zookeeper
+- `use.consumelag.zookeeper`: enable collect consume lag from zookeeper
+- `zookeeper.server`: address for connection to zookeeper
 
 **Metrics output example**
 
@@ -253,66 +251,63 @@ To be able to collect the metrics `kafka_consumergroupzookeeper_lag_zookeeper`, 
 # TYPE kafka_consumergroup_current_offset gauge
 kafka_consumergroup_current_offset{consumergroup="KMOffsetCache-kafka-manager-3806276532-ml44w",partition="0",topic="__consumer_offsets"} -1
 
-# HELP kafka_consumergroup_lag Current Approximate Lag of a ConsumerGroup at Topic/Partition
-# TYPE kafka_consumergroup_lag gauge
-kafka_consumergroup_lag{consumergroup="KMOffsetCache-kafka-manager-3806276532-ml44w",partition="0",topic="__consumer_offsets"} 1
+# HELP kafka_consumergroup_uncommitted_offsets Current Approximate count of uncommitted offsets for a ConsumerGroup at Topic/Partition
+# TYPE kafka_consumergroup_uncommitted_offsets gauge
+kafka_consumergroup_uncommitted_offsets{consumergroup="KMOffsetCache-kafka-manager-3806276532-ml44w",partition="0",topic="__consumer_offsets"} 1
 ```
 
 ### Consumer Lag
 
 **Metric Details**
 
-| Name                                 | Exposed information                                                          |
-| ------------------------------------ | ---------------------------------------------------------------------------- |
-| `kafka_consumer_lag_millis`          | Current approximation of consumer lag for a ConsumerGroup at Topic/Partition |
-| `kafka_consumer_lag_extrapolation`   | Indicates that a consumer group lag estimation used extrapolation            |
-| `kafka_consumer_lag_interpolation`   | Indicates that a consumer group lag estimation used interpolation            |
+| Name                               | Exposed information                                                          |
+| ---------------------------------- | ---------------------------------------------------------------------------- |
+| `kafka_consumer_lag_millis`        | Current approximation of consumer lag for a ConsumerGroup at Topic/Partition |
+| `kafka_consumer_lag_extrapolation` | Indicates that a consumer group lag estimation used extrapolation            |
+| `kafka_consumer_lag_interpolation` | Indicates that a consumer group lag estimation used interpolation            |
 
 **Metrics output example**
+
 ```
 # HELP kafka_consumer_lag_extrapolation Indicates that a consumer group lag estimation used extrapolation
 # TYPE kafka_consumer_lag_extrapolation counter
 kafka_consumer_lag_extrapolation{consumergroup="perf-consumer-74084",partition="0",topic="test"} 1
-   
+
 # HELP kafka_consumer_lag_interpolation Indicates that a consumer group lag estimation used interpolation
 # TYPE kafka_consumer_lag_interpolation counter
 kafka_consumer_lag_interpolation{consumergroup="perf-consumer-74084",partition="0",topic="test"} 1
-   
+
 # HELP kafka_consumer_lag_millis Current approximation of consumer lag for a ConsumerGroup at Topic/Partition
 # TYPE kafka_consumer_lag_millis gauge
 kafka_consumer_lag_millis{consumergroup="perf-consumer-74084",partition="0",topic="test"} 3.4457231197552e+10
 ```
 
-Grafana Dashboard
--------
+## Grafana Dashboard
 
 Grafana Dashboard ID: 7589, name: Kafka Exporter Overview.
 
 For details of the dashboard please see [Kafka Exporter Overview](https://grafana.com/grafana/dashboards/7589-kafka-exporter-overview/).
 
-Lag Estimation
--
-The technique to estimate lag for a consumer group, topic, and partition is taken from the [Lightbend Kafka Lag Exporter](https://github.com/lightbend/kafka-lag-exporter). 
+## Lag Estimation
 
-Once the exporter starts up, sampling of the next offset to be produced begins. The interpolation table is built from these samples, and the current offset for each monitored consumer group are compared against values in the table. If an upper and lower bound for the current offset of a consumer group are in the table, the interpolation technique is used. If only an upper bound is container within the table, extrapolation is used. 
+The technique to estimate lag for a consumer group, topic, and partition is taken from the [Lightbend Kafka Lag Exporter](https://github.com/lightbend/kafka-lag-exporter).
+
+Once the exporter starts up, sampling of the next offset to be produced begins. The interpolation table is built from these samples, and the current offset for each monitored consumer group are compared against values in the table. If an upper and lower bound for the current offset of a consumer group are in the table, the interpolation technique is used. If only an upper bound is container within the table, extrapolation is used.
 
 For the lag computation, the number of offsets for each partition is trimmed down to `max.offsets` (default 1000), with the oldest offsets removed first.
 
-Contribute
-----------
+## Contribute
 
 To contribute to the upstream project, please open a [pull request](https://github.com/danielqsj/kafka_exporter/pulls).
 
 To contribute to this fork please open a [pull request here](https://github.com/grafana/kafka_exporter/pulls)
 
-Donation
---------
+## Donation
 
 To donate to the developer of the project this is forked from please use the donation link below
 
 ![](https://github.com/danielqsj/kafka_exporter/raw/master/alipay.jpg)
 
-License
--------
+## License
 
 Code is licensed under the [Apache License 2.0](https://github.com/danielqsj/kafka_exporter/blob/master/LICENSE).
